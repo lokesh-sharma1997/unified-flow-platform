@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: ufp-gateway
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ufp_gateway
+    username: ufp
+    password: ufp
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  kafka:
+    bootstrap-servers: localhost:9092
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.ufp: DEBUG
