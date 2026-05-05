@@ -1,0 +1,67 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  java:
+    name: Java Build & Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ufp
+          POSTGRES_PASSWORD: ufp
+          POSTGRES_DB: ufp_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - run: mvn clean verify --batch-mode --no-transfer-progress
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/ufp_test
+          SPRING_DATASOURCE_USERNAME: ufp
+          SPRING_DATASOURCE_PASSWORD: ufp
+
+  angular:
+    name: Angular Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/ufp-portal/package-lock.json
+      - run: npm ci
+        working-directory: frontend/ufp-portal
+      - run: npm run build -- --configuration production
+        working-directory: frontend/ufp-portal
+
+  go:
+    name: Go Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: go-services/ufp-stream-processor/go.sum
+      - run: go build ./...
+        working-directory: go-services/ufp-stream-processor
+      - run: go vet ./...
+        working-directory: go-services/ufp-stream-processor
+      - run: go test ./... -race
+        working-directory: go-services/ufp-stream-processor

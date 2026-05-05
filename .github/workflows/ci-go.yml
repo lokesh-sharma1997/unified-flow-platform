@@ -1,0 +1,45 @@
+name: Go CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'go-services/**'
+      - '.github/workflows/ci-go.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'go-services/**'
+
+jobs:
+  build:
+    name: Build, Vet & Test (Go 1.23)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go 1.23
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: go-services/ufp-stream-processor/go.sum
+
+      - name: Build
+        working-directory: go-services/ufp-stream-processor
+        run: go build ./...
+
+      - name: Vet
+        working-directory: go-services/ufp-stream-processor
+        run: go vet ./...
+
+      - name: Test
+        working-directory: go-services/ufp-stream-processor
+        run: go test ./... -v -race -coverprofile=coverage.out
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-coverage
+          path: go-services/ufp-stream-processor/coverage.out
+          retention-days: 7
